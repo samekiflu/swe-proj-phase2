@@ -32,11 +32,12 @@ Resources:
           KeyType: RANGE
 
   ############################################################
-  # HTTP API
+  # HTTP API GATEWAY
   ############################################################
   RegistryApi:
     Type: AWS::Serverless::HttpApi
     Properties:
+      StageName: "$default"
       CorsConfiguration:
         AllowOrigins:
           - "*"
@@ -50,7 +51,7 @@ Resources:
           - "*"
 
   ############################################################
-  # LAMBDA FUNCTION (ALL ROUTES IN ONE LAMBDA)
+  # SINGLE LAMBDA FOR ALL ENDPOINTS
   ############################################################
   RegistryFunction:
     Type: AWS::Serverless::Function
@@ -61,7 +62,9 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref TrustModelRegistryTable
       Events:
+        ########################################################
         # HEALTH
+        ########################################################
         Health:
           Type: HttpApi
           Properties:
@@ -76,7 +79,9 @@ Resources:
             Method: GET
             ApiId: !Ref RegistryApi
 
+        ########################################################
         # TRACKS
+        ########################################################
         Tracks:
           Type: HttpApi
           Properties:
@@ -84,7 +89,19 @@ Resources:
             Method: GET
             ApiId: !Ref RegistryApi
 
-        # AUTH
+        ########################################################
+        # LOGIN (AUTOGRADER REQUIRES THIS)
+        ########################################################
+        Login:
+          Type: HttpApi
+          Properties:
+            Path: /login
+            Method: POST
+            ApiId: !Ref RegistryApi
+
+        ########################################################
+        # AUTHENTICATE
+        ########################################################
         Authenticate:
           Type: HttpApi
           Properties:
@@ -92,7 +109,9 @@ Resources:
             Method: PUT
             ApiId: !Ref RegistryApi
 
+        ########################################################
         # RESET
+        ########################################################
         ResetRegistry:
           Type: HttpApi
           Properties:
@@ -131,7 +150,9 @@ Resources:
             Method: DELETE
             ApiId: !Ref RegistryApi
 
-        # NAME SEARCH
+        ########################################################
+        # SEARCH ENDPOINTS
+        ########################################################
         GetArtifactByName:
           Type: HttpApi
           Properties:
@@ -139,7 +160,6 @@ Resources:
             Method: GET
             ApiId: !Ref RegistryApi
 
-        # REGEX SEARCH (support POST and GET)
         GetArtifactByRegExPost:
           Type: HttpApi
           Properties:
@@ -154,7 +174,6 @@ Resources:
             Method: GET
             ApiId: !Ref RegistryApi
 
-        # LIST ARTIFACTS (GET + POST)
         ListArtifactsPost:
           Type: HttpApi
           Properties:
@@ -170,7 +189,7 @@ Resources:
             ApiId: !Ref RegistryApi
 
         ########################################################
-        # EXTRA ENDPOINTS
+        # RATING, COST, LINEAGE, LICENSE, AUDIT
         ########################################################
         RateModel:
           Type: HttpApi
@@ -207,7 +226,9 @@ Resources:
             Method: GET
             ApiId: !Ref RegistryApi
 
-        # CATCH ALL
+        ########################################################
+        # CATCH ALL ROUTING (MUST BE LAST!)
+        ########################################################
         CatchAll:
           Type: HttpApi
           Properties:
@@ -216,6 +237,9 @@ Resources:
             ApiId: !Ref RegistryApi
 
 Outputs:
+  ############################################################
+  # BASE API URL
+  ############################################################
   ApiUrl:
     Value: !Sub "https://${RegistryApi}.execute-api.${AWS::Region}.amazonaws.com"
     Description: Base URL of the Registry API
