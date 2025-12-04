@@ -107,12 +107,14 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     if path == "/tracks" and method == "GET":
         return json_response(
             200,
-            [
-                {
-                    "name": "access-control",
-                    "version": "1.0.0"
-                }
-            ]
+            {
+                "plannedTracks": [
+                    {
+                        "name": "access-control",
+                        "version": "1.0.0"
+                    }
+                ]
+            }
         )
 
 
