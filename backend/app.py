@@ -106,17 +106,17 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # ------------------------------------------------------------
     if path == "/tracks" and method == "GET":
         return json_response(
-        200,
-        {
-            "plannedTracks": [
-                {
-                    "name": "access-control",
-                    "version": "1.0.0",
-                    "description": "Access control policies and mechanisms"
-                }
-            ]
-        }
-    )
+            200,
+            {
+                "plannedTracks": [
+                    {
+                        "name": "access-control",
+                        "version": "1.0.0",
+                        "description": "Access control policies and mechanisms"
+                    }
+                ]
+            }
+        )
 
     # ------------------------------------------------------------
     # LOGIN (REQUIRED BY AUTOGRADER)
