@@ -2,4 +2,5 @@ fastapi
 uvicorn
 boto3
 pydantic
+mangum
 
