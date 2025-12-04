@@ -108,7 +108,7 @@ def route_request(table, method, path, headers, body, query_params, path_params)
         return json_response(
             200,
             {
-                "plannedTracks": [
+                "planned_tracks": [
                     {
                         "name": "access-control",
                         "version": "1.0.0"
