@@ -151,6 +151,23 @@ Resources:
             ApiId: !Ref RegistryApi
 
         ########################################################
+        # INGEST (NEW)
+        ########################################################
+        IngestModel:
+          Type: HttpApi
+          Properties:
+            Path: /artifact/model/ingest
+            Method: POST
+            ApiId: !Ref RegistryApi
+
+        IngestModelShort:
+          Type: HttpApi
+          Properties:
+            Path: /ingest
+            Method: POST
+            ApiId: !Ref RegistryApi
+
+        ########################################################
         # SEARCH ENDPOINTS
         ########################################################
         GetArtifactByName:
@@ -165,13 +182,6 @@ Resources:
           Properties:
             Path: /artifact/byRegEx
             Method: POST
-            ApiId: !Ref RegistryApi
-
-        GetArtifactByRegExGet:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/byRegEx
-            Method: GET
             ApiId: !Ref RegistryApi
 
         ListArtifactsPost:

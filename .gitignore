@@ -1,2 +1,27 @@
-node_modules
+# SAM build artifacts
+.aws-sam/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+
+# Environment files
 .env
+*.env
+
+# Node (if any frontend tooling)
+node_modules/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# AWS credentials (just in case)
+.aws/
