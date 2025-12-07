@@ -121,12 +121,12 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # LOGIN (REQUIRED BY AUTOGRADER)
     # ------------------------------------------------------------
     if path == "/login" and method == "POST":
-    # Return token as plain string, not JSON object
+    # Return token as a JSON object
         return {
             "statusCode": 200,
-            "body": "valid-token",
+            "body": json.dumps({"token": "valid-token"}),
             "headers": {
-                "Content-Type": "text/plain",
+                "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*"
             }
         }
@@ -301,12 +301,12 @@ def authenticate(body):
     if (username, password) not in valid:
         return error_response(401, "Invalid credentials")
 
-    # Return plain text token, not JSON
+    # Return JSON token, not plain text
     return {
         "statusCode": 200,
-        "body": "valid-token",  # Plain text, not json_response
+        "body": json.dumps({"token": "valid-token"}),
         "headers": {
-            "Content-Type": "text/plain",
+            "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*"
         }
     }
