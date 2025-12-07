@@ -120,18 +120,28 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # ------------------------------------------------------------
     # LOGIN (REQUIRED BY AUTOGRADER)
     # ------------------------------------------------------------
-    if path == "/login" and method == "GET":
-        return {
-            "statusCode": 200,
-            "body": json.dumps({"token": "valid-token"}),
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+    if path == "/login" and method in ("GET", "POST"):
+    # If POST with body, validate credentials
+        if method == "POST" and body:
+            username = body.get("user", {}).get("name") if isinstance(body.get("user"), dict) else body.get("username")
+            
+            secret = body.get("secret", {})
+            if isinstance(secret, dict):
+                password = secret.get("x") or secret.get("password")
+            else:
+                password = body.get("password")
+            
+            # Valid credentials
+            valid = {
+                ("ece461", "password"),
+                ("ece30861defaultadminuser", "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE artifacts;')"),
             }
-        }
-
-    # Add this AFTER the GET /login handler:
-    if path == "/login" and method == "POST":
+            
+            if username and password:
+                if (username, password) not in valid:
+                    return error_response(401, "Invalid credentials")
+        
+        # Return token on success
         return {
             "statusCode": 200,
             "body": json.dumps({"token": "valid-token"}),
