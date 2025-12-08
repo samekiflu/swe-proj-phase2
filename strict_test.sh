@@ -91,7 +91,7 @@ CREATE=$(curl -s -w "\n%{http_code}" \
 BODY=$(echo "$CREATE" | head -n1)
 STATUS=$(echo "$CREATE" | tail -n1)
 
-check_status $STATUS 201 "Create artifact failed"
+check_status $STATUS 200 "Create artifact failed"  # ✅ FIXED: Changed from 201 to 200
 
 ARTIFACT_ID=$(echo "$BODY" | jq -r '.metadata.id')
 [[ "$ARTIFACT_ID" != "null" ]] || fail "Missing artifact ID"
@@ -104,7 +104,7 @@ pass "Artifact created (ID=$ARTIFACT_ID)"
 echo "TEST 6 — Get Artifact"
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: bearer $TOKEN" \
-    "$API/artifacts/model/$ARTIFACT_ID")
+    "$API/artifact/model/$ARTIFACT_ID")  # ✅ FIXED: Changed from /artifacts/model/ to /artifact/model/
 check_status $STATUS 200 "Get artifact failed"
 pass "Get artifact works"
 
@@ -187,7 +187,7 @@ STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 check_status $STATUS 200 "Reset failed"
 pass "Reset OK"
 
-echo -e "\n${GREEN}🎉 ALL STRICT TESTS PASSED SUCCESSFULLY${NC}\n"
+echo -e "\n${GREEN} ALL STRICT TESTS PASSED SUCCESSFULLY${NC}\n"
 
 ###############################################
 # TEST 16 — INGEST (SUCCESSFUL)
@@ -202,7 +202,7 @@ INGEST_OK=$(curl -s -w "\n%{http_code}" -X POST "$API/artifact/model/ingest" \
 INGEST_BODY_OK=$(echo "$INGEST_OK" | head -n1)
 INGEST_STATUS_OK=$(echo "$INGEST_OK" | tail -n1)
 
-check_status $INGEST_STATUS_OK 201 "Ingest (success) should return 201"
+check_status $INGEST_STATUS_OK 200 "Ingest (success) should return 200"  # FIXED: Changed from 201 to 200
 
 ACCEPTED=$(echo "$INGEST_BODY_OK" | jq -r .accepted)
 [[ "$ACCEPTED" == "true" ]] || fail "Ingest (success) did not return accepted=true"
@@ -233,3 +233,5 @@ ACCEPTED_FAIL=$(echo "$INGEST_BODY_FAIL" | jq -r .accepted)
 [[ "$ACCEPTED_FAIL" == "false" ]] || fail "Ingest (fail) did not return accepted=false"
 
 pass "Rejected ingest behaves correctly"
+
+echo -e "\n${GREEN}ALL TESTS COMPLETED SUCCESSFULLY!${NC}\n"

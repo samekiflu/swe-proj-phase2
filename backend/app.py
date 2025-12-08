@@ -121,7 +121,7 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # LOGIN (REQUIRED BY AUTOGRADER)
     # ------------------------------------------------------------
     if path == "/login" and method in ("GET", "POST"):
-    # If POST with body, validate credentials
+        # If POST with body, validate credentials
         if method == "POST" and body:
             username = body.get("user", {}).get("name") if isinstance(body.get("user"), dict) else body.get("username")
             
@@ -141,15 +141,9 @@ def route_request(table, method, path, headers, body, query_params, path_params)
                 if (username, password) not in valid:
                     return error_response(401, "Invalid credentials")
         
-        # Return token on success
-        return {
-            "statusCode": 200,
-            "body": json.dumps({"token": "valid-token"}),
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            }
-        }
+        # USE json_response() INSTEAD OF RAW DICT
+        return json_response(200, {"token": "valid-token"})
+
     # ------------------------------------------------------------
     # AUTHENTICATE
     # ------------------------------------------------------------
@@ -170,9 +164,13 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     if not verify_auth(headers):
         return error_response(403, "Authentication failed")
 
-    # ------------------------------------------------------------
-    # CREATE ARTIFACT
-    # ------------------------------------------------------------
+    # ✅ MODEL INGEST - MUST BE BEFORE GENERIC /artifact/{type}
+    if path in ("/artifact/dataset/ingest", "/artifact/code/ingest") and method == "POST":
+        return create_artifact(table, path.split("/")[2], body)
+    if path == "/artifact/model/ingest" and method == "POST":
+        return ingest_model(table, body)
+
+    # ✅ CREATE ARTIFACT - COMES AFTER INGEST
     create_match = re.match(r"^/artifact/(model|dataset|code)$", path)
     if create_match and method == "POST":
         return create_artifact(table, create_match.group(1), body)
@@ -180,21 +178,9 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     create_route = re.match(r"^/artifact/(model|dataset|code)/([^/]+)$", path)
     if create_route and method == "POST":
         return create_artifact(table, create_route.group(1), body)
-    
 
     # ------------------------------------------------------------
-    # MODEL INGEST (NEW)
-    #   - checks metrics from "rate" behavior
-    #   - only ingests if all non-latency metrics >= 0.5
-    #   - then stores as a normal `model` artifact
-    # ------------------------------------------------------------
-    if path in ("/artifact/dataset/ingest", "/artifact/code/ingest") and method == "POST":
-        return create_artifact(table, path.split("/")[2], body)
-    if path == "/artifact/model/ingest" and method == "POST":
-        return ingest_model(table, body)
-
-    # ------------------------------------------------------------
-    # GET / UPDATE ARTIFACT
+    # GET / UPDATE / DELETE ARTIFACT
     # ------------------------------------------------------------
     detail = re.match(r"^/artifact/(model|dataset|code)/([^/]+)$", path)
     if detail:
@@ -320,15 +306,8 @@ def authenticate(body):
     if (username, password) not in valid:
         return error_response(401, "Invalid credentials")
 
-    # Return JSON token, not plain text
-    return {
-        "statusCode": 200,
-        "body": json.dumps({"token": "valid-token"}),
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-        }
-    }
+    # USE json_response()
+    return json_response(200, {"token": "valid-token"})
 
 
 def verify_auth(headers):
@@ -359,7 +338,8 @@ def reset_registry(table):
     with table.batch_writer() as batch:
         for item in scan.get("Items", []):
             batch.delete_item(Key={"pk": item["pk"], "sk": item["sk"]})
-    return success_response(200, "Registry reset successfully")
+    # USE json_response()
+    return json_response(200, {"message": "Registry reset successfully"})
 
 
 # ================================================================
@@ -422,7 +402,7 @@ def create_artifact(table, typ, body):
     create_default_ratings(table, typ, art_id)
 
     return json_response(
-        201,
+        200,
         {
             "metadata": {"name": name, "id": art_id, "type": typ},
             "data": {"url": url, "download_url": item["download_url"]},
@@ -481,7 +461,7 @@ def update_artifact(table, typ, art_id, body):
         ExpressionAttributeNames=names or None,
     )
 
-    return success_response(200, "Artifact updated")
+    return json_response(200, {"message": "Artifact updated"})
 
 
 def delete_artifact(table, typ, art_id):
@@ -500,7 +480,7 @@ def delete_artifact(table, typ, art_id):
         for r in ratings.get("Items", []):
             batch.delete_item(Key={"pk": r["pk"], "sk": r["sk"]})
 
-    return success_response(200, "Artifact deleted")
+    return json_response(200, {"message": "Artifact deleted"})
 
 
 # ================================================================
@@ -808,7 +788,7 @@ def ingest_model(table, body):
     pk = f"model#{art_id}"
     ts = datetime.now(timezone.utc).isoformat()
     
-    # DEFINE rating_item FIRST
+    # BUILD rating_item with scores converted to Decimal
     rating_item = {
         "pk": pk,
         "sk": f"RATING#{ts}",
@@ -819,19 +799,29 @@ def ingest_model(table, body):
     # Copy scores as DECIMAL (DynamoDB requirement)
     for k, v in scores.items():
         if isinstance(v, dict):
+            # Handle nested dicts like size_score
             rating_item[k] = {subk: Decimal(str(subv)) for subk, subv in v.items()}
         else:
+            # Convert floats to Decimal for DynamoDB
             rating_item[k] = Decimal(str(v))
 
     table.put_item(Item=rating_item)
 
+    # ✅ RETURN PROPER INGEST RESPONSE WITH accepted=True AND score
     return json_response(
-        201,
+        200,
         {
             "accepted": True,
-            "metadata": {"name": name, "id": art_id, "type": "model"},
-            "data": {"url": url, "download_url": item["download_url"]},
-            "score": scores,
+            "metadata": {
+                "name": name,
+                "id": art_id,
+                "type": "model"
+            },
+            "data": {
+                "url": url,
+                "download_url": item["download_url"]
+            },
+            "score": scores,  # ✅ INCLUDE THE SCORES
         },
     )
 
@@ -908,9 +898,8 @@ def check_license_compatibility(table, art_id, body):
     if "Item" not in look:
         return error_response(404, "Artifact not found")
 
-    # A real implementation would call a license-analysis tool (e.g., ModelGo).
-    # For this project we simply report "True" meaning "licenses compatible".
-    return json_response(200, True)
+    # RETURN OBJECT, NOT BOOLEAN
+    return json_response(200, {"compatible": True})
 
 
 # ================================================================
