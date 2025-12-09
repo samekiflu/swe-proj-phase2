@@ -31,7 +31,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Your SAM template and .samconfig.toml are in the infrastructure/ folder
+      # SAM template and .samconfig.toml are in the infrastructure/ folder
       - name: Build and deploy SAM app
         working-directory: infrastructure
         run: |
