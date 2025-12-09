@@ -147,7 +147,7 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # ------------------------------------------------------------
     # AUTHENTICATE
     # ------------------------------------------------------------
-    if plath == "/authenticate" and method == "PUT":
+    if path == "/authenticate" and method == "PUT":
         return authenticate(body)
 
     # ------------------------------------------------------------
