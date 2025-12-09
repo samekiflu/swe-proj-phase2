@@ -12,7 +12,7 @@ NC="\033[0m"
 
 
 fail() {
-    echo -e "${RED}❌ TEST FAILED:${NC} $1"
+    echo -e "${RED} TEST FAILED:${NC} $1"
     exit 1
 }
 
@@ -91,7 +91,7 @@ CREATE=$(curl -s -w "\n%{http_code}" \
 BODY=$(echo "$CREATE" | head -n1)
 STATUS=$(echo "$CREATE" | tail -n1)
 
-check_status $STATUS 200 "Create artifact failed"  # ✅ FIXED: Changed from 201 to 200
+check_status $STATUS 200 "Create artifact failed"  # FIXED: Changed from 201 to 200
 
 ARTIFACT_ID=$(echo "$BODY" | jq -r '.metadata.id')
 [[ "$ARTIFACT_ID" != "null" ]] || fail "Missing artifact ID"

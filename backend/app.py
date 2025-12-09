@@ -147,13 +147,20 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # ------------------------------------------------------------
     # AUTHENTICATE
     # ------------------------------------------------------------
-    if path == "/authenticate" and method == "PUT":
+    if plath == "/authenticate" and method == "PUT":
         return authenticate(body)
 
     # ------------------------------------------------------------
     # RESET (AUTH REQUIRED)
     # ------------------------------------------------------------
     if path == "/reset" and method == "DELETE":
+        if not verify_auth(headers):
+            return error_response(403, "Authentication failed")
+        return reset_registry(table)
+    
+    # post
+
+    if path == "/reset" and method == "POST":
         if not verify_auth(headers):
             return error_response(403, "Authentication failed")
         return reset_registry(table)
@@ -164,13 +171,13 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     if not verify_auth(headers):
         return error_response(403, "Authentication failed")
 
-    # ✅ MODEL INGEST - MUST BE BEFORE GENERIC /artifact/{type}
+    # MODEL INGEST - MUST BE BEFORE GENERIC /artifact/{type}
     if path in ("/artifact/dataset/ingest", "/artifact/code/ingest") and method == "POST":
         return create_artifact(table, path.split("/")[2], body)
     if path == "/artifact/model/ingest" and method == "POST":
         return ingest_model(table, body)
 
-    # ✅ CREATE ARTIFACT - COMES AFTER INGEST
+    # CREATE ARTIFACT - COMES AFTER INGEST
     create_match = re.match(r"^/artifact/(model|dataset|code)$", path)
     if create_match and method == "POST":
         return create_artifact(table, create_match.group(1), body)
@@ -807,7 +814,7 @@ def ingest_model(table, body):
 
     table.put_item(Item=rating_item)
 
-    # ✅ RETURN PROPER INGEST RESPONSE WITH accepted=True AND score
+    # RETURN PROPER INGEST RESPONSE WITH accepted=True AND score
     return json_response(
         200,
         {
@@ -821,7 +828,7 @@ def ingest_model(table, body):
                 "url": url,
                 "download_url": item["download_url"]
             },
-            "score": scores,  # ✅ INCLUDE THE SCORES
+            "score": scores,  # INCLUDE THE SCORES
         },
     )
 

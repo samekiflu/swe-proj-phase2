@@ -36,5 +36,4 @@ jobs:
         working-directory: infrastructure
         run: |
           sam build
-          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
-
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --force-upload
