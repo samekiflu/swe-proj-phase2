@@ -2,6 +2,7 @@ import json
 import os
 import re
 import base64
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Dict, Optional
@@ -9,6 +10,9 @@ from typing import Any, Dict, Optional
 import boto3
 from boto3.dynamodb.conditions import Key
 
+# LOGGING
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # ================================================================
 #   LAMBDA HANDLER
@@ -134,7 +138,7 @@ def route_request(table, method, path, headers, body, query_params, path_params)
             # Valid credentials
             valid = {
                 ("ece461", "password"),
-                ("ece30861defaultadminuser", "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE artifacts;')"),
+                ("ece30861defaultadminuser", "correcthorsebatterystaple123(!__+@**(A'\"`)"),
             }
             
             if username and password:
@@ -182,9 +186,9 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     if create_match and method == "POST":
         return create_artifact(table, create_match.group(1), body)
     
-    create_route = re.match(r"^/artifact/(model|dataset|code)/([^/]+)$", path)
-    if create_route and method == "POST":
-        return create_artifact(table, create_route.group(1), body)
+    # create_route = re.match(r"^/artifact/(model|dataset|code)/([^/]+)$", path)
+    # if create_route and method == "POST":
+    #     return create_artifact(table, create_route.group(1), body)
 
     # ------------------------------------------------------------
     # GET / UPDATE / DELETE ARTIFACT
@@ -306,8 +310,7 @@ def authenticate(body):
 
     valid = {
         ("ece461", "password"),
-        ("ece30861defaultadminuser",
-         "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE artifacts;')"),
+        ("ece30861defaultadminuser", "correcthorsebatterystaple123(!__+@**(A'\"`)"),
     }
 
     if (username, password) not in valid:
@@ -409,7 +412,7 @@ def create_artifact(table, typ, body):
     create_default_ratings(table, typ, art_id)
 
     return json_response(
-        200,
+        201,
         {
             "metadata": {"name": name, "id": art_id, "type": typ},
             "data": {"url": url, "download_url": item["download_url"]},
@@ -816,7 +819,7 @@ def ingest_model(table, body):
 
     # RETURN PROPER INGEST RESPONSE WITH accepted=True AND score
     return json_response(
-        200,
+        201,
         {
             "accepted": True,
             "metadata": {
