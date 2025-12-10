@@ -91,7 +91,7 @@ CREATE=$(curl -s -w "\n%{http_code}" \
 BODY=$(echo "$CREATE" | head -n1)
 STATUS=$(echo "$CREATE" | tail -n1)
 
-check_status $STATUS 200 "Create artifact failed"  # FIXED: Changed from 201 to 200
+check_status $STATUS 201 "Create artifact failed"  # FIXED: Changed from 201 to 200
 
 ARTIFACT_ID=$(echo "$BODY" | jq -r '.metadata.id')
 [[ "$ARTIFACT_ID" != "null" ]] || fail "Missing artifact ID"
@@ -202,7 +202,7 @@ INGEST_OK=$(curl -s -w "\n%{http_code}" -X POST "$API/artifact/model/ingest" \
 INGEST_BODY_OK=$(echo "$INGEST_OK" | head -n1)
 INGEST_STATUS_OK=$(echo "$INGEST_OK" | tail -n1)
 
-check_status $INGEST_STATUS_OK 200 "Ingest (success) should return 200"  # FIXED: Changed from 201 to 200
+check_status $INGEST_STATUS_OK 201 "Ingest (success) should return 200"  # FIXED: Changed from 201 to 200
 
 ACCEPTED=$(echo "$INGEST_BODY_OK" | jq -r .accepted)
 [[ "$ACCEPTED" == "true" ]] || fail "Ingest (success) did not return accepted=true"

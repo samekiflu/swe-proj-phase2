@@ -138,7 +138,6 @@ def route_request(table, method, path, headers, body, query_params, path_params)
             # Valid credentials
             valid = {
                 ("ece461", "password"),
-                ("ece30861defaultadminuser", "correcthorsebatterystaple123(!__+@**(A'\"`)"),
             }
             
             if username and password:
@@ -310,7 +309,6 @@ def authenticate(body):
 
     valid = {
         ("ece461", "password"),
-        ("ece30861defaultadminuser", "correcthorsebatterystaple123(!__+@**(A'\"`)"),
     }
 
     if (username, password) not in valid:
@@ -974,3 +972,4 @@ def decimal_default(obj):
     if isinstance(obj, Decimal):
         return float(obj)
     raise TypeError(f"Type {type(obj)} not serializable")
+# force update
