@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: ECE 461 Trustworthy Model Registry - HTTP API Deployment
+Description: ECE 461 Trustworthy Model Registry - Single Lambda Proxy Deployment
 
 Globals:
   Function:
@@ -32,23 +32,16 @@ Resources:
           KeyType: RANGE
 
   ############################################################
-  # HTTP API GATEWAY
+  # API Gateway - HTTP API (v2) with single ANY proxy route
   ############################################################
   RegistryApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: "$default"
       CorsConfiguration:
-        AllowOrigins:
-          - "*"
-        AllowMethods:
-          - GET
-          - POST
-          - PUT
-          - DELETE
-          - OPTIONS
-        AllowHeaders:
-          - "*"
+        AllowOrigins: ["*"]
+        AllowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+        AllowHeaders: ["*"]
 
   ############################################################
   # SINGLE LAMBDA FOR ALL ENDPOINTS
@@ -62,184 +55,8 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref TrustModelRegistryTable
       Events:
-        ########################################################
-        # HEALTH
-        ########################################################
-        Health:
-          Type: HttpApi
-          Properties:
-            Path: /health
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        HealthComponents:
-          Type: HttpApi
-          Properties:
-            Path: /health/components
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # TRACKS
-        ########################################################
-        Tracks:
-          Type: HttpApi
-          Properties:
-            Path: /tracks
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # LOGIN (AUTOGRADER REQUIRES THIS)
-        ########################################################
-        Login:
-          Type: HttpApi
-          Properties:
-            Path: /login
-            Method: POST
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # AUTHENTICATE
-        ########################################################
-        Authenticate:
-          Type: HttpApi
-          Properties:
-            Path: /authenticate
-            Method: PUT
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # RESET
-        ########################################################
-        ResetRegistry:
-          Type: HttpApi
-          Properties:
-            Path: /reset
-            Method: DELETE
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # ARTIFACT CRUD
-        ########################################################
-        CreateArtifact:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/{artifact_type}
-            Method: POST
-            ApiId: !Ref RegistryApi
-
-        GetArtifact:
-          Type: HttpApi
-          Properties:
-            Path: /artifacts/{artifact_type}/{id}
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        UpdateArtifact:
-          Type: HttpApi
-          Properties:
-            Path: /artifacts/{artifact_type}/{id}
-            Method: PUT
-            ApiId: !Ref RegistryApi
-
-        DeleteArtifact:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/{artifact_type}/{id}
-            Method: DELETE
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # INGEST (NEW)
-        ########################################################
-        IngestModel:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/model/ingest
-            Method: POST
-            ApiId: !Ref RegistryApi
-
-        IngestModelShort:
-          Type: HttpApi
-          Properties:
-            Path: /ingest
-            Method: POST
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # SEARCH ENDPOINTS
-        ########################################################
-        GetArtifactByName:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/byName/{name}
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        GetArtifactByRegExPost:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/byRegEx
-            Method: POST
-            ApiId: !Ref RegistryApi
-
-        ListArtifactsPost:
-          Type: HttpApi
-          Properties:
-            Path: /artifacts
-            Method: POST
-            ApiId: !Ref RegistryApi
-
-        ListArtifactsGet:
-          Type: HttpApi
-          Properties:
-            Path: /artifacts
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # RATING, COST, LINEAGE, LICENSE, AUDIT
-        ########################################################
-        RateModel:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/model/{id}/rate
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        GetArtifactCost:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/{artifact_type}/{id}/cost
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        GetArtifactLineage:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/model/{id}/lineage
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        CheckLicenseCompatibility:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/model/{id}/license-check
-            Method: POST
-            ApiId: !Ref RegistryApi
-
-        GetArtifactAudit:
-          Type: HttpApi
-          Properties:
-            Path: /artifact/{artifact_type}/{id}/audit
-            Method: GET
-            ApiId: !Ref RegistryApi
-
-        ########################################################
-        # CATCH ALL ROUTING (MUST BE LAST!)
-        ########################################################
-        CatchAll:
+        # ONE CATCH-ALL PROXY ROUTE
+        ProxyRoute:
           Type: HttpApi
           Properties:
             Path: /{proxy+}
@@ -247,9 +64,6 @@ Resources:
             ApiId: !Ref RegistryApi
 
 Outputs:
-  ############################################################
-  # BASE API URL
-  ############################################################
   ApiUrl:
     Value: !Sub "https://${RegistryApi}.execute-api.${AWS::Region}.amazonaws.com"
     Description: Base URL of the Registry API

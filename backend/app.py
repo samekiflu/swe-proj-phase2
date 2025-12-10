@@ -10,6 +10,9 @@ from typing import Any, Dict, Optional
 import boto3
 from boto3.dynamodb.conditions import Key
 
+dynamodb = boto3.resource("dynamodb")
+table = dynamodb.Table("TrustModelRegistry")
+
 # LOGGING
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -100,11 +103,10 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # HEALTH (NO AUTH)
     # ------------------------------------------------------------
     if path == "/health" and method == "GET":
-        return success_response(200, "OK")
+        return json_response(200, {"status": "healthy"})
 
     if path == "/health/components" and method == "GET":
-        return health_components(query_params)
-
+        return json_response(200, health_components(query_params))
     # ------------------------------------------------------------
     # TRACKS (NO AUTH)
     # ------------------------------------------------------------
@@ -342,12 +344,38 @@ def verify_auth(headers):
 # ================================================================
 
 def reset_registry(table):
-    scan = table.scan()
-    with table.batch_writer() as batch:
-        for item in scan.get("Items", []):
-            batch.delete_item(Key={"pk": item["pk"], "sk": item["sk"]})
-    # USE json_response()
-    return json_response(200, {"message": "Registry reset successfully"})
+    """
+    Deletes ALL items from the table, even if DynamoDB scan() paginates results.
+    """
+    deleted = 0
+    last_evaluated_key = None
+
+    while True:
+        if last_evaluated_key:
+            response = table.scan(ExclusiveStartKey=last_evaluated_key)
+        else:
+            response = table.scan()
+
+        items = response.get("Items", [])
+
+        # Delete each item
+        with table.batch_writer() as batch:
+            for item in items:
+                batch.delete_item(
+                    Key={
+                        "pk": item["pk"],
+                        "sk": item["sk"]
+                    }
+                )
+                deleted += 1
+
+        # Continue if DynamoDB returned more pages
+        last_evaluated_key = response.get("LastEvaluatedKey")
+        if not last_evaluated_key:
+            break
+
+    return json_response(200, {"message": f"Registry reset successfully. Deleted {deleted} items."})
+
 
 
 # ================================================================
@@ -921,7 +949,7 @@ def get_artifact_audit(table, typ, art_id):
     if "Item" not in look:
         return error_response(404, "Artifact not found")
 
-    # Placeholder: in a real system, this would return a list of changes / reviews.
+    # Placeholder: in a real system, this would return a list of changes / reviews
     return json_response(200, [])
 
 
