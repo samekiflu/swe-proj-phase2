@@ -156,11 +156,7 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # AUTHENTICATE
     # ------------------------------------------------------------
     if path == "/authenticate" and method == "PUT":
-        if not verify_auth(headers):
-            return error_response(403, "Authentication failed")
-        
-        return json_response(200, {"token": "valid-token"})
-
+        return authenticate(body)
 
     # ------------------------------------------------------------
     # RESET (AUTH REQUIRED)
