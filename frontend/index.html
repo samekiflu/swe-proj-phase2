@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trust Model Registry</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Page (hidden after login) -->
+        <div id="loginPage" class="page active">
+            <div class="login-container">
+                <div class="login-box">
+                    <h1>🔐 Trust Model Registry</h1>
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input 
+                                type="text" 
+                                id="username" 
+                                placeholder="ece461" 
+                                value="ece461"
+                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                placeholder="password" 
+                                value="password"
+                                required
+                            />
+                        </div>
+                        <div id="loginError" class="error-message"></div>
+                        <button type="submit" id="loginBtn">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Page (hidden before login) -->
+        <div id="dashboardPage" class="page">
+            <div class="header">
+                <h1>📚 Trust Model Registry Dashboard</h1>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+
+            <div class="container">
+                <!-- CREATE ARTIFACT -->
+                <div class="card">
+                    <h2>➕ Create Artifact</h2>
+                    <form id="createForm" onsubmit="handleCreateArtifact(event)">
+                        <div class="form-row">
+                            <select id="artifactType">
+                                <option value="model">Model</option>
+                                <option value="dataset">Dataset</option>
+                                <option value="code">Code</option>
+                            </select>
+                            <input 
+                                type="url" 
+                                id="artifactUrl" 
+                                placeholder="https://huggingface.co/..."
+                                required
+                            />
+                            <button type="submit" id="createBtn">Create</button>
+                        </div>
+                        <div id="createError" class="error-message"></div>
+                    </form>
+                </div>
+
+                <!-- MODEL INGEST -->
+                <div class="card">
+                    <h2>🚀 Ingest Model</h2>
+                    <form id="ingestForm" onsubmit="handleIngestModel(event)">
+                        <div class="form-row">
+                            <input 
+                                type="url" 
+                                id="ingestUrl" 
+                                placeholder="https://huggingface.co/bert-base-uncased"
+                                required
+                            />
+                            <button type="submit" id="ingestBtn">Ingest</button>
+                        </div>
+                        <div id="ingestError" class="error-message"></div>
+                        <div id="ingestResult" class="ingest-result"></div>
+                    </form>
+                </div>
+
+                <!-- ARTIFACTS LIST -->
+                <div class="card">
+                    <h2>📦 Artifacts (<span id="artifactCount">0</span>)</h2>
+                    <button class="refresh-btn" onclick="loadArtifacts()">🔄 Refresh</button>
+                    <div id="artifactsList">
+                        <p>Loading artifacts...</p>
+                    </div>
+                </div>
+
+                <!-- SEARCH -->
+                <div class="card">
+                    <h2>🔍 Search</h2>
+                    <div class="search-group">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search by name or regex..."
+                        />
+                        <button onclick="handleSearch()">Search</button>
+                        <button onclick="handleRegexSearch()">Regex Search</button>
+                    </div>
+                    <div id="searchResults"></div>
+                </div>
+
+                <!-- ACTIONS -->
+                <div class="card">
+                    <h2>⚙️ Actions</h2>
+                    <button class="action-btn reset-btn" onclick="handleReset()">
+                        🗑️ Reset Registry
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
