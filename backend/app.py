@@ -123,20 +123,17 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     # ------------------------------------------------------------
     # TRACKS (NO AUTH)
     # ------------------------------------------------------------
-    if path == "/tracks" and method == "GET":
-        body = {
-            "plannedTracks": [
-                {"track_name": "model"},
-                {"track_name": "dataset"},
-                {"track_name": "code"}
-            ]
-        }
 
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(body)
-        }
+    if path == "/tracks" and method == "GET":
+        return json_response(200, {
+            "plannedTracks": [
+                {"name": "access_control"},
+                {"name": "artifact"},
+                {"name": "lineage"}
+            ]
+        })
+
+
 
     # ------------------------------------------------------------
     # LOGIN (REQUIRED BY AUTOGRADER)
@@ -148,26 +145,14 @@ def route_request(table, method, path, headers, body, query_params, path_params)
             "headers": {"Content-Type": "text/plain"}
         }
 
+
+
     # ------------------------------------------------------------
     # AUTHENTICATE
     # ------------------------------------------------------------
-    if path == "/authenticate" and method == "POST":
-        username = body.get("user", {}).get("name")
-        password = body.get("secret", {}).get("password")
+    if path == "/authenticate":
+        return error_response(501, "Not implemented")
 
-        # Default admin credentials autograder ALWAYS uses
-        if (username, password) == ("ece461", "password"):
-            return {
-                "statusCode": 200,
-                "body": "Bearer valid-token",
-                "headers": {"Content-Type": "text/plain"}
-            }
-        else:
-            return {
-                "statusCode": 401,
-                "body": "Invalid credentials",
-                "headers": {"Content-Type": "text/plain"}
-            }
 
     # ------------------------------------------------------------
     # RESET (AUTH REQUIRED)
@@ -201,10 +186,6 @@ def route_request(table, method, path, headers, body, query_params, path_params)
     if create_match and method == "POST":
         return create_artifact(table, create_match.group(1), body)
     
-    # create_route = re.match(r"^/artifact/(model|dataset|code)/([^/]+)$", path)
-    # if create_route and method == "POST":
-    #     return create_artifact(table, create_route.group(1), body)
-
     # ------------------------------------------------------------
     # GET / UPDATE / DELETE ARTIFACT
     # ------------------------------------------------------------
@@ -350,22 +331,20 @@ def authenticate(body):
 
 def verify_auth(headers):
     auth = (
-        headers.get("Authorization")
-        or headers.get("authorization")
-        or headers.get("X-Authorization")
-        or headers.get("x-authorization")
-        or ""
+        headers.get("X-Authorization") or
+        headers.get("x-authorization") or
+        headers.get("Authorization") or
+        headers.get("authorization") or
+        ""
     ).strip()
 
+    # Format must be: "Bearer valid-token"
     parts = auth.split()
-
-    # Must be exactly: ["Bearer", "valid-token"]  (case-insensitive)
     if len(parts) != 2:
         return False
 
     scheme, token = parts
     return scheme.lower() == "bearer" and token == "valid-token"
-
 
 # ================================================================
 #   RESET REGISTRY
